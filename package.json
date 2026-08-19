@@ -1,0 +1,41 @@
+{
+  "name": "easycalc",
+  "private": true,
+  "version": "1.0.3",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.1.1",
+    "@reduxjs/toolkit": "^2.11.2",
+    "@vitejs/plugin-react-swc": "^3.11.0",
+    "antd": "^6.3.5",
+    "axios": "^1.16.1",
+    "crypto-js": "^4.2.0",
+    "docx": "^8.5.0",
+    "file-saver": "^2.0.5",
+    "formik": "^2.4.9",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.400.0",
+    "pptxgenjs": "^4.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.2.0",
+    "recharts": "^2.12.7",
+    "redux-persist": "^6.0.0",
+    "secure-ls": "^2.0.0",
+    "vite-plugin-pages": "^0.33.3",
+    "vite-plugin-singlefile": "^2.3.3",
+    "xlsx": "^0.18.5",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.4"
+  }
+}
