@@ -1,6 +1,6 @@
-import { Card, CardTitle, PageHeader, Alert, Btn, Sep, TableWrap, Th, Td } from '../components/UI.jsx'
-import { DEPT_COLORS } from '../constants.js'
+import { Card, CardTitle, PageHeader, Alert, Btn, Sep, TableWrap, Th, Td, SectionLabel, SavedTick, InfoNote, DeptBadge } from '../components/UI.jsx'
 import { useState, useEffect, useMemo } from 'react'
+import { PieChart, Clock3, Users2, MousePointerClick } from 'lucide-react'
 import {
   updatecomplexityTiers,
   complexityDetails,
@@ -37,6 +37,18 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
   const [savingComplexityId, setSavingComplexityId] = useState('')
   const [phaseEdits, setPhaseEdits] = useState({})
   const [savingPhaseCell, setSavingPhaseCell] = useState('')
+  const [savedFlash, setSavedFlash] = useState({})
+
+  const flashSaved = (key) => {
+    setSavedFlash((prev) => ({ ...prev, [key]: true }))
+    setTimeout(() => {
+      setSavedFlash((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+    }, 1400)
+  }
 
 
   useEffect(() => {
@@ -62,9 +74,22 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
 
   const handlePhaseCellSave = async (tierId, phase) => {
     const edited = phaseEdits[tierId]?.[phase]
-    if (edited === undefined || edited === '') return
+    if (edited === undefined) return
 
     const cellKey = `${tierId}_${phase}`
+
+    if (edited === '') {
+      // Left blank on purpose or by accident — revert to the last saved value
+      // instead of silently leaving the box empty. Type 0 to actually set zero.
+      setPhaseEdits((prev) => {
+        const next = { ...prev, [tierId]: { ...prev[tierId] } }
+        delete next[tierId][phase]
+        return next
+      })
+      showSnackbar('info', 'Left blank — kept the previous value. Type 0 if you want to set it to zero.')
+      return
+    }
+
     try {
       setSavingPhaseCell(cellKey)
       await dispatch(
@@ -76,6 +101,7 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
           },
         })
       ).unwrap()
+      flashSaved(cellKey)
     } catch (err) {
       console.error('Failed to update tier phase effort', err)
     } finally {
@@ -127,7 +153,14 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
       )
     )
 
-  const handleComplexitySave = async (tier) => {
+  const handleComplexitySave = async (tier, field) => {
+    if (tier[field] === '') {
+      // Left blank — revert to the last saved value instead of saving 0 by accident.
+      await dispatch(complexityDetails()).unwrap().catch(() => {})
+      showSnackbar('info', 'Left blank — kept the previous value. Type 0 if you want to set it to zero.')
+      return
+    }
+
     const payload = {
       tier_name: tier.tier_name,
       percentage: Number(tier.percentage),
@@ -145,6 +178,7 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
       ).unwrap()
 
       await dispatch(complexityDetails()).unwrap()
+      flashSaved(`${tier.complexity_tier_id}_${field}`)
     } catch (err) {
       console.error('Failed to update complexity tier', err)
     } finally {
@@ -171,6 +205,17 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
   const handleRoleFieldSave = async (role, field) => {
     const edited = roleEdits[role.role_id] || {};
 
+    if (edited[field] === '') {
+      // Left blank — revert to the last saved value instead of an invalid save.
+      setRoleEdits((prev) => {
+        const next = { ...prev, [role.role_id]: { ...prev[role.role_id] } }
+        delete next[role.role_id][field]
+        return next
+      })
+      showSnackbar('info', 'Left blank — kept the previous value.')
+      return
+    }
+
     const payload = {
       department_id: role.department_id,
       role_name: role.role_name,
@@ -191,8 +236,14 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
       is_active: role.is_active ?? true,
     };
 
-    if (!payload.sprint_from || !payload.sprint_to) return;
-    if (payload.sprint_from > payload.sprint_to) return;
+    if (!payload.sprint_from || !payload.sprint_to) {
+      showSnackbar('warning', 'Sprint From and Sprint To must both be at least 1.')
+      return;
+    }
+    if (payload.sprint_from > payload.sprint_to) {
+      showSnackbar('warning', 'Sprint From can\'t be later than Sprint To.')
+      return;
+    }
 
     try {
       setSavingRoleId(role.role_id);
@@ -200,6 +251,7 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
         updateRoleMaster({ roleId: role.role_id, payload })
       ).unwrap();
       await dispatch(deptRolesDetails()).unwrap();
+      flashSaved(`${role.role_id}_${field}`)
     } catch (err) {
       console.error("Failed to update role", err);
     } finally {
@@ -283,7 +335,7 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
       <PageHeader
         breadcrumb={['Configuration', 'Settings']}
         title="Settings"
-        subtitle="Configure complexity tiers and the role master. These values apply to all projects."
+        subtitle="Shared configuration used by every project. Nothing here belongs to one project — it's what the calculation engine reads from whenever any project is recalculated."
       />
 
       {!pctOk && (
@@ -293,34 +345,18 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
       )}
       {pctOk && <Alert variant="success">All settings valid. Complexity totals 100%.</Alert>}
 
-      <div
-        style={{
-          display: "grid",
+      <SectionLabel
+        step={1}
+        totalSteps={2}
+        title="Complexity tiers — how integrations are split"
+        description="Every project's total integration count is divided across these 5 tiers by percentage. All five percentages must add up to 100%."
+      />
 
-          gridTemplateColumns:
-            window.innerWidth < 600
-              ? "1fr"
-              : "1fr 1fr",
-
-          gap: 16,
-
-          alignItems: "stretch",
-        }}
-      >
-        <Card style={{
-          width: '100%',
-          maxWidth: window.innerWidth < 600 ? '100%' : '100%',
-          margin: window.innerWidth < 600 ? '0 auto' : undefined,
-          height: 480,
-          display: 'flex',
-          flexDirection: 'column',
-        }}>
-          <CardTitle>
-            Complexity tiers
-
+      <Card>
+        <CardTitle
+          action={
             <span
               style={{
-                marginLeft: 'auto',
                 fontSize: 11,
                 fontWeight: 700,
                 padding: '2px 10px',
@@ -331,128 +367,259 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
             >
               Total: {pctTotal}%
             </span>
-          </CardTitle>
+          }
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <PieChart size={16} color="var(--blue-600)" />
+            Complexity tiers
+          </span>
+        </CardTitle>
 
-          <div className="ec-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', marginBottom: 14 }}>
-          <TableWrap style={{ marginBottom: 0 }}>
+        <InfoNote icon={<MousePointerClick size={13} />}>
+          Click a number to edit it, then click elsewhere to save. Leaving a box blank keeps its
+          previous value — it won't be set to 0 by accident.
+        </InfoNote>
+
+        <TableWrap style={{ marginBottom: 0, }}>
+          <thead>
+            <tr>
+              <Th>Tier</Th>
+              <Th>Distribution</Th>
+              <Th center>Effort Points</Th>
+              <Th center>Percentage</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {complexity.map((c) => (
+              <tr key={c.id} className="ec-row-hover">
+                <Td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{c.tier_name}</span>
+                  </div>
+                </Td>
+
+                <Td style={{ minWidth: 110 }}>
+                  <div style={{ height: 6, background: 'var(--gray-200)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: 6,
+                        width: `${c.percentage}%`,
+                        background: c.color,
+                        borderRadius: 999,
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                </Td>
+
+                <Td center>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      className="ec-input"
+                      type="number"
+                      value={c.effort_points ?? ''}
+                      min="1"
+                      max="20"
+                      style={{
+                        width: 56,
+                        height: 32,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '0 6px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        fontFamily: 'inherit',
+                        color: 'var(--navy-800)',
+                        background: '#fff',
+                      }}
+                      onChange={(e) =>
+                        updatePts(c.complexity_tier_id, e.target.value)
+                      }
+                      onBlur={() => handleComplexitySave(c, 'effort_points')}
+                      disabled={savingComplexityId === c.complexity_tier_id}
+                    />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>pts</span>
+                    {savedFlash[`${c.complexity_tier_id}_effort_points`] && <SavedTick />}
+                  </div>
+                </Td>
+
+                <Td center>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      className="ec-input"
+                      type="number"
+                      value={c.percentage ?? ''}
+                      min="0"
+                      max="100"
+                      style={{
+                        width: 56,
+                        height: 32,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '0 6px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        fontFamily: 'inherit',
+                        color: 'var(--navy-800)',
+                        background: '#fff',
+                      }}
+                      onChange={(e) =>
+                        updatePct(c.complexity_tier_id, e.target.value)
+                      }
+                      onBlur={() => handleComplexitySave(c, 'percentage')}
+                      disabled={savingComplexityId === c.complexity_tier_id}
+                    />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>%</span>
+                    {savedFlash[`${c.complexity_tier_id}_percentage`] && <SavedTick />}
+                  </div>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </TableWrap>
+
+        <Sep />
+
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 0 }}>
+          <b>Effort Points</b> is kept for reference only — it no longer drives the hour totals.
+          <b> Percentage</b> is what actually decides how many integrations fall into this tier.
+        </p>
+      </Card>
+
+      <SectionLabel
+        step={2}
+        totalSteps={2}
+        connectPrev
+        title="Effort hours by phase — how many hours each tier costs"
+        description="For every tier, how many hours one integration takes in each of the 7 project phases. This is what the calculation engine actually adds up — not the Effort Points column above."
+      />
+
+      <Card>
+        <CardTitle>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Clock3 size={16} color="var(--blue-600)" />
+            Effort hours by phase
+          </span>
+        </CardTitle>
+
+        <InfoNote icon={<MousePointerClick size={13} />}>
+          Click a cell to edit its hours, then click elsewhere to save. Leaving a box blank keeps
+          its previous value — type <code style={{ background: 'var(--blue-100)', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>0</code> if you actually want zero hours for that phase.
+        </InfoNote>
+
+        <div className="ec-scroll" style={{ overflowX: 'auto' }}>
+          <TableWrap style={{ marginBottom: 0, minWidth: 760 }}>
             <thead>
               <tr>
                 <Th>Tier</Th>
-                <Th>Distribution</Th>
-                <Th center>Effort Points</Th>
-                <Th center>Percentage</Th>
+                {PHASE_COLUMNS.map((p) => (
+                  <Th key={p.key} center>{p.label}</Th>
+                ))}
+                <Th center>Total</Th>
               </tr>
             </thead>
             <tbody>
-              {complexity.map((c) => (
-                <tr key={c.id} className="ec-row-hover">
-                  <Td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
-                      <span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{c.tier_name}</span>
-                    </div>
-                  </Td>
+              {complexity.map((c) => {
+                const tierId = c.complexity_tier_id
+                const rowHours = phaseHoursByTier[tierId] || {}
+                const total = PHASE_COLUMNS.reduce(
+                  (sum, p) => sum + Number(rowHours[p.key] ?? 0),
+                  0
+                )
 
-                  <Td style={{ minWidth: 110 }}>
-                    <div style={{ height: 6, background: 'var(--gray-200)', borderRadius: 999, overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          height: 6,
-                          width: `${c.percentage}%`,
-                          background: c.color,
-                          borderRadius: 999,
-                          transition: 'width 0.3s ease',
-                        }}
-                      />
-                    </div>
-                  </Td>
+                return (
+                  <tr key={tierId} className="ec-row-hover" style={{ background: `${c.color}0d` }}>
+                    <Td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{c.tier_name}</span>
+                      </div>
+                    </Td>
 
-                  <Td center>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <input
-                        className="ec-input"
-                        type="number"
-                        value={c.effort_points ?? ''}
-                        min="1"
-                        max="20"
-                        style={{
-                          width: 56,
-                          height: 32,
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          padding: '0 6px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          fontFamily: 'inherit',
-                          color: 'var(--navy-800)',
-                          background: '#fff',
-                        }}
-                        onChange={(e) =>
-                          updatePts(c.complexity_tier_id, e.target.value)
-                        }
-                        onBlur={() => handleComplexitySave(c)}
-                        disabled={savingComplexityId === c.complexity_tier_id}
-                      />
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>pts</span>
-                    </div>
-                  </Td>
+                    {PHASE_COLUMNS.map((p) => {
+                      const cellKey = `${tierId}_${p.key}`
+                      const value = phaseEdits[tierId]?.[p.key] ?? rowHours[p.key] ?? ''
 
-                  <Td center>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <input
-                        className="ec-input"
-                        type="number"
-                        value={c.percentage ?? ''}
-                        min="0"
-                        max="100"
-                        style={{
-                          width: 56,
-                          height: 32,
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          padding: '0 6px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          fontFamily: 'inherit',
-                          color: 'var(--navy-800)',
-                          background: '#fff',
-                        }}
-                        onChange={(e) =>
-                          updatePct(c.complexity_tier_id, e.target.value)
-                        }
-                        onBlur={() => handleComplexitySave(c)}
-                        disabled={savingComplexityId === c.complexity_tier_id}
-                      />
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>%</span>
-                    </div>
-                  </Td>
-                </tr>
-              ))}
+                      return (
+                        <Td key={p.key} center>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                            <input
+                              className="ec-input"
+                              type="number"
+                              value={value}
+                              min="0"
+                              style={{
+                                width: 56,
+                                height: 30,
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                                padding: '0 4px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                textAlign: 'center',
+                                fontFamily: 'inherit',
+                                color: 'var(--navy-800)',
+                                background: '#fff',
+                              }}
+                              disabled={savingPhaseCell === cellKey}
+                              onChange={(e) => handlePhaseCellChange(tierId, p.key, e.target.value)}
+                              onBlur={() => handlePhaseCellSave(tierId, p.key)}
+                            />
+                            {savedFlash[cellKey] && <SavedTick />}
+                          </div>
+                        </Td>
+                      )
+                    })}
+
+                    <Td center>
+                      <span style={{ fontWeight: 700, color: 'var(--teal-600)' }}>{total}</span>
+                    </Td>
+                  </tr>
+                )
+              })}
             </tbody>
           </TableWrap>
-          </div>
+        </div>
 
-          <Sep />
+        <Sep />
 
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 0 }}>
-            Effort hours = Integrations × % × Effort pts × 8 hrs
-          </p>
-        </Card>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 0 }}>
+          Effort hours per tier = sum of its 7 phase hours × integration count. A fixed 80hr HyperCare
+          line is added on top for every project automatically, and Dev &amp; UT hours drop 30% for
+          any project with the Boomi AI option turned on.
+        </p>
+      </Card>
 
-        <Card
-          style={{
-            width: "100%",
-            height: 480,
+      <SectionLabel
+        title="Staffing catalog"
+        description="Independent of the two steps above — this is the list of roles a project can staff, and their default FTE / sprint range. Add roles to a specific project on the Project Input page."
+      />
 
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <CardTitle>Role master</CardTitle>
+      <Card
+        style={{
+          width: "100%",
+          height: 480,
 
-          <div
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <CardTitle>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Users2 size={16} color="var(--blue-600)" />
+            Role master
+          </span>
+        </CardTitle>
+
+        <InfoNote icon={<MousePointerClick size={13} />}>
+          Click a number to edit it, then click elsewhere to save. Leaving a box blank keeps its
+          previous value.
+        </InfoNote>
+
+        <div
             className="ec-scroll"
             style={{
               border: "1px solid var(--border)",
@@ -510,10 +677,6 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
 
               {/* Rows */}
               {allRoles.map((r, i) => {
-                const dc =
-                  DEPT_COLORS[r.department_name] ||
-                  DEPT_COLORS.PM;
-
                 const disabled =
                   savingRoleId === r.role_id ||
                   deletingRoleId === r.role_id;
@@ -560,21 +723,7 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
 
                     {/* Dept */}
                     <div>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-
-                          padding: "3px 8px",
-
-                          borderRadius: 999,
-
-                          background: dc.bg,
-                          color: dc.text,
-                        }}
-                      >
-                        {r.department_name}
-                      </span>
+                      <DeptBadge dept={r.department_name} />
                     </div>
 
                     {/* FTE */}
@@ -861,93 +1010,6 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
               + Add
             </Btn>
           </div>
-        </Card>
-      </div>
-
-      <Card>
-        <CardTitle>Effort hours by phase</CardTitle>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-          Hours per SDLC phase for each complexity tier. Drives project effort calculations
-          instead of a flat effort-points figure.
-        </p>
-
-        <div className="ec-scroll" style={{ overflowX: 'auto' }}>
-          <TableWrap style={{ marginBottom: 0, minWidth: 760 }}>
-            <thead>
-              <tr>
-                <Th>Tier</Th>
-                {PHASE_COLUMNS.map((p) => (
-                  <Th key={p.key} center>{p.label}</Th>
-                ))}
-                <Th center>Total</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {complexity.map((c) => {
-                const tierId = c.complexity_tier_id
-                const rowHours = phaseHoursByTier[tierId] || {}
-                const total = PHASE_COLUMNS.reduce(
-                  (sum, p) => sum + Number(rowHours[p.key] ?? 0),
-                  0
-                )
-
-                return (
-                  <tr key={tierId} className="ec-row-hover">
-                    <Td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
-                        <span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{c.tier_name}</span>
-                      </div>
-                    </Td>
-
-                    {PHASE_COLUMNS.map((p) => {
-                      const cellKey = `${tierId}_${p.key}`
-                      const value = phaseEdits[tierId]?.[p.key] ?? rowHours[p.key] ?? ''
-
-                      return (
-                        <Td key={p.key} center>
-                          <input
-                            className="ec-input"
-                            type="number"
-                            value={value}
-                            min="0"
-                            style={{
-                              width: 56,
-                              height: 30,
-                              border: '1px solid var(--border)',
-                              borderRadius: 8,
-                              padding: '0 4px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              textAlign: 'center',
-                              fontFamily: 'inherit',
-                              color: 'var(--navy-800)',
-                              background: '#fff',
-                            }}
-                            disabled={savingPhaseCell === cellKey}
-                            onChange={(e) => handlePhaseCellChange(tierId, p.key, e.target.value)}
-                            onBlur={() => handlePhaseCellSave(tierId, p.key)}
-                          />
-                        </Td>
-                      )
-                    })}
-
-                    <Td center>
-                      <span style={{ fontWeight: 700, color: 'var(--teal-600)' }}>{total}</span>
-                    </Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </TableWrap>
-        </div>
-
-        <Sep />
-
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 0 }}>
-          Effort hours per tier = sum of its 7 phase hours × integration count. A fixed 80hr HyperCare
-          line is added on top for every project.
-        </p>
       </Card>
     </div>
   )

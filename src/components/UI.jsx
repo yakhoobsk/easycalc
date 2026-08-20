@@ -160,6 +160,83 @@ export function Sep() {
   return <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
 }
 
+// ── Section label ─────────────────────────────────────────────────────────────
+// Groups one or more Cards under a heading. Pass `step`/`totalSteps` only when
+// the sections that follow genuinely happen in that order — otherwise omit them.
+// Consecutive numbered steps grow a connecting line between them automatically.
+export function SectionLabel({ step, totalSteps, title, description, connectPrev = false }) {
+  return (
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12, margin: step === 1 || !step ? '30px 0 14px' : '14px 0 14px' }}>
+      {connectPrev && (
+        <span style={{
+          position: 'absolute', left: 13, top: -22, width: 2, height: 22,
+          background: 'repeating-linear-gradient(to bottom, var(--blue-300) 0 4px, transparent 4px 8px)',
+        }} />
+      )}
+      {step && (
+        <span style={{
+          flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #185FA5, #0F52BA)',
+          color: '#fff', boxShadow: '0 2px 8px rgba(15,82,186,.28)',
+          fontSize: 12.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {step}
+        </span>
+      )}
+      <div style={{ paddingTop: step ? 1 : 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--navy-800)', letterSpacing: '-0.1px' }}>
+            {title}
+          </span>
+          {step && totalSteps && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: 'var(--blue-700)', letterSpacing: '.05em',
+              background: 'var(--blue-100)', padding: '2px 8px', borderRadius: 20,
+            }}>
+              STEP {step} OF {totalSteps}
+            </span>
+          )}
+        </div>
+        {description && (
+          <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3, maxWidth: 680, lineHeight: 1.5 }}>{description}</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Inline info note ──────────────────────────────────────────────────────────
+// A compact, always-visible instructional line for "here's how this control
+// works" — quieter than Alert, meant to sit inside a Card above a table/form.
+export function InfoNote({ children, icon }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 8,
+      background: 'var(--blue-50)', border: '1px solid var(--blue-100)',
+      borderRadius: 'var(--radius-md)', padding: '9px 12px', marginBottom: 14,
+      fontSize: 12, color: 'var(--gray-700)', lineHeight: 1.5,
+    }}>
+      <span style={{ flexShrink: 0, marginTop: 1, color: 'var(--blue-500)' }}>{icon}</span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+// ── Saved indicator ───────────────────────────────────────────────────────────
+// Small inline confirmation for an inline-edit-then-save field. Render it next
+// to the input; it's just a label, mount/unmount it to control visibility.
+export function SavedTick({ label = 'Saved', icon }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontSize: 10.5, fontWeight: 700, color: 'var(--teal-600)',
+      animation: 'ec-fade-in .15s ease',
+    }}>
+      {icon || '✓'} {label}
+    </span>
+  )
+}
+
 // ── Table shell ───────────────────────────────────────────────────────────────
 export function TableWrap({ children, style = {} }) {
   return (
