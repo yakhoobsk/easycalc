@@ -237,6 +237,142 @@ export function SavedTick({ label = 'Saved', icon }) {
   )
 }
 
+// ── Switch ────────────────────────────────────────────────────────────────────
+export function Switch({ checked, onChange, label, hint, disabled = false }) {
+  return (
+    <label style={{
+      display: 'inline-flex', alignItems: 'center', gap: 10, position: 'relative',
+      cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.55 : 1,
+    }}>
+      <input
+        type="checkbox"
+        checked={!!checked}
+        disabled={disabled}
+        onChange={(e) => onChange?.(e.target.checked)}
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+      />
+      <span className="ec-switch-track" style={{
+        width: 40, height: 22, borderRadius: 999, flexShrink: 0, position: 'relative',
+        background: checked ? 'linear-gradient(135deg, #1D9E75, #0F6E56)' : 'var(--gray-300)',
+        boxShadow: checked ? '0 2px 8px rgba(15,110,86,.3)' : 'none',
+      }}>
+        <span className="ec-switch-thumb" style={{
+          position: 'absolute', top: 2, left: checked ? 20 : 2, width: 18, height: 18,
+          borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+        }} />
+      </span>
+      {(label || hint) && (
+        <span>
+          {label && <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--navy-800)' }}>{label}</span>}
+          {hint && <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>{hint}</span>}
+        </span>
+      )}
+    </label>
+  )
+}
+
+// ── Icon button ───────────────────────────────────────────────────────────────
+export function IconBtn({ children, onClick, title, variant = 'default', disabled = false, style = {} }) {
+  return (
+    <button
+      type="button"
+      className={`ec-icon-btn ${variant === 'danger' ? 'danger' : ''}`.trim()}
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      style={{
+        width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)',
+        background: '#fff', color: 'var(--gray-600)', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1, flexShrink: 0, ...style,
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+export function Modal({ title, onClose, children, footer, width = 480 }) {
+  return (
+    <div
+      className="ec-modal-overlay"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(10,25,41,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000, padding: 20,
+      }}
+    >
+      <div
+        className="ec-modal-box"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 16, width, maxWidth: '100%', maxHeight: '90vh',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          boxShadow: '0 30px 70px rgba(5,20,50,.35)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <span style={{ width: 4, height: 16, borderRadius: 4, background: 'linear-gradient(180deg, #2F80ED, #0F52BA)', flexShrink: 0 }} />
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy-800)', flex: 1 }}>{title}</div>
+          <button
+            type="button"
+            className="ec-modal-close"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--border)',
+              background: '#fff', color: 'var(--gray-500)', fontSize: 15, lineHeight: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="ec-scroll" style={{ padding: 20, overflowY: 'auto' }}>
+          {children}
+        </div>
+
+        {footer && (
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px',
+            borderTop: '1px solid var(--border)', background: 'var(--gray-50)', flexShrink: 0,
+          }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+export function EmptyState({ icon, title, description, action }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '48px 20px' }}>
+      {icon && (
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%', background: 'var(--blue-50)',
+          color: 'var(--blue-600)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 14px',
+        }}>
+          {icon}
+        </div>
+      )}
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy-800)', marginBottom: description ? 5 : 0 }}>{title}</div>
+      {description && (
+        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', maxWidth: 380, margin: '0 auto', lineHeight: 1.6 }}>
+          {description}
+        </div>
+      )}
+      {action && <div style={{ marginTop: 16 }}>{action}</div>}
+    </div>
+  )
+}
+
 // ── Table shell ───────────────────────────────────────────────────────────────
 export function TableWrap({ children, style = {} }) {
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import logo from "../assests/logocomany2.png";
 import pkg from '../../package.json';
 export default function Topbar({ projectName, sidebarOpen, setSidebarOpen, setPage, }) {
@@ -101,16 +102,25 @@ export default function Topbar({ projectName, sidebarOpen, setSidebarOpen, setPa
           <button
             onClick={() => setSidebarOpen(prev => !prev)}
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              borderRadius: 8,
+              width: 34,
+              height: 34,
               color: '#fff',
-              fontSize: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: 'pointer',
-              marginLeft: "10px"
+              marginLeft: "10px",
+              transition: 'background .15s ease, border-color .15s ease',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
           >
-            {sidebarOpen ? '☰' : '☰'}
+            {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
           </button>
         </div>
       </div>
@@ -193,19 +203,25 @@ export default function Topbar({ projectName, sidebarOpen, setSidebarOpen, setPa
       }}>
         <div
           onClick={() => setPage('profile')}
+          title="View profile"
           style={{
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             borderRadius: '50%',
-            background: '#90CAF9',
+            background: 'linear-gradient(135deg, #5FA3E8, #185FA5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 11,
             fontWeight: 700,
             color: '#fff',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            border: '2px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 2px 6px rgba(0,0,0,.2)',
+            transition: 'transform .15s ease, box-shadow .15s ease',
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
         >
           {getInitials(auth?.name)}
         </div>

@@ -1,388 +1,337 @@
 import { useEffect, useState } from "react";
-import UserModal from "../components/usermodel";
 import { useDispatch, useSelector } from "react-redux";
+import { Pencil, Trash2, UserPlus, Building2, Users as UsersIcon } from "lucide-react";
+import UserModal from "../components/usermodel";
+import DepartmentModal from "../components/DepartmentModal";
 import { AllProfileDetails, createdeparment, deleteUser } from "../redux/services/profileService";
 import { deptRolesDetails } from "../redux/services/settingsService";
-import DepartmentModal from "../components/DepartmentModal";
+import { showSnackbar } from "../utils/snackbar";
+import {
+  PageHeader,
+  Card,
+  Btn,
+  IconBtn,
+  Badge,
+  DeptBadge,
+  TableWrap,
+  Th,
+  Td,
+  EmptyState,
+} from "../components/UI.jsx";
 
-/* ---------- BUTTONS ---------- */
-
-const btnPrimary = {
-    background: "linear-gradient(135deg, #185FA5, #0F52BA)",
-    color: "#fff",
-    border: "1px solid #0F52BA",
-    padding: "9px 16px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 600,
-    boxShadow: "0 2px 10px rgba(15,82,186,.28)"
+const avatarStyle = {
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  background: "linear-gradient(135deg, #185FA5, #0F52BA)",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 13,
+  fontWeight: 700,
+  flexShrink: 0,
 };
 
-const btnEdit = {
-    marginRight: 8,
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--border)",
-    cursor: "pointer",
-    background: "#fff",
-    fontSize: 12.5,
-    fontWeight: 600,
-    color: "var(--gray-700)"
-};
+function TabBar({ tab, setTab }) {
+  const tabs = [
+    { id: "users", label: "User management", icon: <UsersIcon size={14} /> },
+    { id: "dept", label: "Department management", icon: <Building2 size={14} /> },
+  ];
 
-const btnDelete = {
-    color: "var(--red-700)",
-    border: "1px solid #F7C1C1",
-    background: "var(--red-100)",
-    borderRadius: 8,
-    padding: "6px 12px",
-    cursor: "pointer",
-    fontSize: 12.5,
-    fontWeight: 600
-};
-
-/* ---------- TABLE ---------- */
-
-const tableCard = {
-    background: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    border: "1px solid var(--border)",
-    boxShadow: "0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05)",
-    overflowX: "auto"
-};
-
-const thCell = {
-    textAlign: "left",
-    padding: "12px 14px",
-    fontSize: 10.5,
-    color: "var(--gray-600)",
-    fontWeight: 700,
-    letterSpacing: ".06em",
-    textTransform: "uppercase",
-    borderBottom: "2px solid var(--border)"
-};
-
-const tdCell = {
-    padding: "12px 14px",
-    fontSize: 13,
-    borderBottom: "1px solid var(--gray-200)"
-};
-
-const avatar = {
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #185FA5, #0F52BA)",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 13,
-    fontWeight: 600
-};
-
-const badge = {
-    background: "#EEF6FF",
-    color: "#185FA5",
-    fontSize: 11,
-    padding: "3px 10px",
-    borderRadius: 20,
-    fontWeight: 700
-};
-
-const emptyState = {
-    textAlign: "center",
-    padding: 30,
-    color: "#9CA3AF",
-    fontSize: 13
-};
-
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        gap: 4,
+        background: "var(--gray-100)",
+        padding: 4,
+        borderRadius: 12,
+        marginBottom: 20,
+      }}
+    >
+      {tabs.map((t) => {
+        const active = tab === t.id;
+        return (
+          <button
+            key={t.id}
+            className="ec-btn"
+            onClick={() => setTab(t.id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              border: "none",
+              borderRadius: 9,
+              padding: "8px 16px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              fontFamily: "inherit",
+              cursor: "pointer",
+              background: active ? "#fff" : "transparent",
+              color: active ? "var(--navy-800)" : "var(--text-secondary)",
+              boxShadow: active ? "0 1px 3px rgba(15,23,42,.12)" : "none",
+            }}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function UsersPage() {
-    const [openModal, setOpenModal] = useState(false);
-    const [editUser, setEditUser] = useState(null);
-    const dispatch = useDispatch();
-    const [tab, setTab] = useState("users");
-    const deptRolesData = useSelector((state) => state.complexity?.deptRolesData || [])
-    const users = useSelector((state) => state.profile?.allprofile || []);
-    const [openDeptModal, setOpenDeptModal] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [openDeptModal, setOpenDeptModal] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
+  const [tab, setTab] = useState("users");
 
-    useEffect(() => {
-        dispatch(AllProfileDetails());
-    }, [dispatch]);
+  const dispatch = useDispatch();
+  const deptRolesData = useSelector((state) => state.complexity?.deptRolesData || []);
+  const users = useSelector((state) => state.profile?.allprofile || []);
+  const usersLoading = useSelector((state) => state.profile?.loading);
 
-    useEffect(() => {
-        dispatch(deptRolesDetails())
-    }, [dispatch])
+  useEffect(() => {
+    dispatch(AllProfileDetails());
+  }, [dispatch]);
 
-    const handleDelete = async (user_id) => {
+  useEffect(() => {
+    dispatch(deptRolesDetails());
+  }, [dispatch]);
 
-        try {
-            await dispatch(deleteUser(user_id)).unwrap();
-
-            dispatch(AllProfileDetails());
-
-        } catch (err) {
-            console.error(err || "Delete failed");
-        }
-    };
-
-    function TabButton({ active, onClick, label }) {
-        return (
-            <button
-                onClick={onClick}
-                style={{
-                    padding: "10px 16px",
-                    border: "none",
-                    borderBottom: active
-                        ? "2px solid #185FA5"
-                        : "2px solid transparent",
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontWeight: active ? 600 : 500,
-                    color: active ? "#185FA5" : "#6B7280"
-                }}
-            >
-                {label}
-            </button>
-        );
+  const handleDelete = async (user) => {
+    try {
+      setDeletingId(user.user_id);
+      await dispatch(deleteUser(user.user_id)).unwrap();
+      showSnackbar("success", `${user.name || "User"} deleted successfully`);
+      dispatch(AllProfileDetails());
+    } catch (err) {
+      showSnackbar("error", typeof err === "string" ? err : err?.message || "Delete failed");
+    } finally {
+      setDeletingId("");
     }
+  };
 
-    return (
-        <div>
-            <div
-                style={{
-                    display: "flex",
-                    gap: 10,
-                    marginBottom: 20,
-                    borderBottom: "1px solid #eee"
-                }}
-            >
-                <TabButton
-                    active={tab === "users"}
-                    onClick={() => setTab("users")}
-                    label="User Management"
-                />
+  return (
+    <div>
+      <PageHeader
+        breadcrumb={["Configuration", "Users"]}
+        title="Users & departments"
+        subtitle="Manage who has access to EasyCalc and how departments and roles are organized."
+      />
 
-                <TabButton
-                    active={tab === "dept"}
-                    onClick={() => setTab("dept")}
-                    label="Department Management"
-                />
+      <TabBar tab={tab} setTab={setTab} />
+
+      {tab === "users" && (
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 4, height: 16, borderRadius: 4, background: "linear-gradient(180deg, #2F80ED, #0F52BA)" }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy-800)" }}>System users</div>
+                <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                  {users.length} {users.length === 1 ? "user" : "users"} with access to this workspace
+                </div>
+              </div>
             </div>
 
-            {tab === "users" &&
-                <>
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 20
-                        }}
-                    >
-                        <div>
-                            <h2 style={{ margin: 0 }}>Users</h2>
-                            <div style={{ fontSize: 12, color: "#888" }}>
-                                Manage system users
-                            </div>
-                        </div>
+            <Btn
+              variant="navy"
+              onClick={() => {
+                setEditUser(null);
+                setOpenModal(true);
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <UserPlus size={15} /> Add user
+            </Btn>
+          </div>
 
-                        <button
-                            className="ec-btn"
-                            onClick={() => {
-                                setEditUser(null);
-                                setOpenModal(true);
-                            }}
-                            style={btnPrimary}
+          {usersLoading ? (
+            <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+              Loading users...
+            </div>
+          ) : users.length === 0 ? (
+            <EmptyState
+              icon={<UsersIcon size={22} />}
+              title="No users yet"
+              description="Add your first teammate to give them access to EasyCalc."
+              action={
+                <Btn variant="navy" onClick={() => { setEditUser(null); setOpenModal(true); }}>
+                  + Add user
+                </Btn>
+              }
+            />
+          ) : (
+            <TableWrap style={{ marginBottom: 0 }}>
+              <thead>
+                <tr>
+                  <Th>User</Th>
+                  <Th>Email</Th>
+                  <Th>Role</Th>
+                  <Th>Department</Th>
+                  <Th center>Actions</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u, i) => (
+                  <tr key={u.user_id ?? i} className="ec-row-hover" style={{ background: i % 2 === 0 ? "#fff" : "var(--gray-50)" }}>
+                    <Td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={avatarStyle}>{u?.name?.charAt(0)?.toUpperCase() || "?"}</div>
+                        <span style={{ fontWeight: 600 }}>{u.name}</span>
+                      </div>
+                    </Td>
+                    <Td style={{ color: "var(--text-secondary)" }}>{u.email}</Td>
+                    <Td><Badge variant="blue">{u.role_name || "—"}</Badge></Td>
+                    <Td><DeptBadge dept={u.department_name} /></Td>
+                    <Td center>
+                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                        <IconBtn
+                          title="Edit user"
+                          onClick={() => {
+                            setEditUser(u);
+                            setOpenModal(true);
+                          }}
                         >
-                            + Add User
-                        </button>
-                    </div>
+                          <Pencil size={14} />
+                        </IconBtn>
+                        <IconBtn
+                          title="Delete user"
+                          variant="danger"
+                          disabled={deletingId === u.user_id}
+                          onClick={() => handleDelete(u)}
+                        >
+                          <Trash2 size={14} />
+                        </IconBtn>
+                      </div>
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+          )}
+        </Card>
+      )}
 
-                    {/* TABLE */}
-                    <div style={tableCard}>
-                        <table className="ec-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+      {tab === "dept" && (
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 4, height: 16, borderRadius: 4, background: "linear-gradient(180deg, #2F80ED, #0F52BA)" }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy-800)" }}>Departments</div>
+                <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
+                  {deptRolesData.length} {deptRolesData.length === 1 ? "department" : "departments"} configured
+                </div>
+              </div>
+            </div>
 
-                            {/* HEADER */}
-                            <thead style={{ background: "linear-gradient(180deg, #F8FAFC, #F0F4F8)" }}>
-                                <tr>
-                                    <th style={thCell}>User</th>
-                                    <th style={thCell}>Email</th>
-                                    <th style={thCell}>Role</th>
-                                    <th style={thCell}>Department</th>
-                                    <th style={{ ...thCell, textAlign: "right" }}>Actions</th>
-                                </tr>
-                            </thead>
+            <Btn
+              variant="navy"
+              onClick={() => setOpenDeptModal(true)}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <Building2 size={15} /> Add department
+            </Btn>
+          </div>
 
-                            {/* BODY */}
-                            <tbody>
-                                {users.length > 0 ? (
-                                    users.map((u, i) => (
-                                        <tr key={i}>
-                                            {/* USER */}
-                                            <td style={tdCell}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                    <div style={avatar}>
-                                                        {u?.name?.charAt(0)?.toUpperCase()}
-                                                    </div>
-                                                    <span style={{ fontWeight: 500 }}>{u.name}</span>
-                                                </div>
-                                            </td>
-
-                                            <td style={tdCell}>{u.email}</td>
-
-                                            <td style={tdCell}>
-                                                <span style={badge}>{u.role_name}</span>
-                                            </td>
-
-                                            <td style={tdCell}>{u.department_name}</td>
-
-                                            {/* ACTIONS */}
-                                            <td style={{ ...tdCell, textAlign: "right" }}>
-                                                <button
-                                                    className="ec-btn"
-                                                    style={btnEdit}
-                                                    onClick={() => {
-                                                        setEditUser(u);
-                                                        setOpenModal(true);
-                                                    }}
-                                                >
-                                                    <span>✏</span> Edit
-                                                </button>
-                                                <button
-                                                    className="ec-btn"
-                                                    style={btnDelete}
-                                                    onClick={() => handleDelete(u.user_id)}
-                                                >
-                                                    🗑 Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="5" style={emptyState}>
-                                            No users found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* MODAL */}
-                    {openModal && (
-                        <UserModal
-                            onClose={() => setOpenModal(false)}
-                            editUser={editUser}
-                        />
-                    )}
-                </>
-
-            }
-
-            {tab === "dept" && (
-                <>
-                    {/* HEADER */}
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 20
-                        }}
-                    >
-                        <div>
-                            <h2 style={{ margin: 0 }}>Departments</h2>
-                            <div style={{ fontSize: 12, color: "#888" }}>
-                                Manage departments & roles
-                            </div>
+          {deptRolesData.length === 0 ? (
+            <EmptyState
+              icon={<Building2 size={22} />}
+              title="No departments yet"
+              description="Create a department to start organizing roles under it."
+              action={
+                <Btn variant="navy" onClick={() => setOpenDeptModal(true)}>
+                  + Add department
+                </Btn>
+              }
+            />
+          ) : (
+            <TableWrap style={{ marginBottom: 0 }}>
+              <thead>
+                <tr>
+                  <Th>Department</Th>
+                  <Th>HOD</Th>
+                  <Th>Roles</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {deptRolesData.map((dept, i) => (
+                  <tr key={dept.department_id ?? i} className="ec-row-hover" style={{ background: i % 2 === 0 ? "#fff" : "var(--gray-50)" }}>
+                    <Td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={avatarStyle}>{dept?.department_name?.charAt(0)?.toUpperCase() || "?"}</div>
+                        <span style={{ fontWeight: 600 }}>{dept.department_name}</span>
+                      </div>
+                    </Td>
+                    <Td style={{ color: "var(--text-secondary)" }}>{dept.hod_name || "—"}</Td>
+                    <Td>
+                      {dept.roles?.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                          {dept.roles.slice(0, 3).map((r, idx) => (
+                            <Badge key={idx} variant="gray">{r.role_name}</Badge>
+                          ))}
+                          {dept.roles.length > 3 && (
+                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                              +{dept.roles.length - 3} more
+                            </span>
+                          )}
                         </div>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>No roles yet</span>
+                      )}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+          )}
+        </Card>
+      )}
 
-                        <button className="ec-btn" style={btnPrimary} onClick={() => setOpenDeptModal(true)}>
-                            + Add Department
-                        </button>
-                    </div>
+      {openModal && (
+        <UserModal
+          onClose={() => setOpenModal(false)}
+          editUser={editUser}
+        />
+      )}
 
-                    <div style={tableCard}>
-                        <table className="ec-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-
-                            <thead style={{ background: "linear-gradient(180deg, #F8FAFC, #F0F4F8)" }}>
-                                <tr>
-                                    <th style={thCell}>Department</th>
-                                    <th style={thCell}>HOD</th>
-                                    <th style={thCell}>Roles</th>
-                                </tr>
-                            </thead>
-
-                            {/* BODY */}
-                            <tbody>
-                                {deptRolesData?.length > 0 ? (
-                                    deptRolesData.map((dept, i) => (
-                                        <tr key={i}>
-                                            {/* DEPT NAME */}
-                                            <td style={tdCell}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                    <div style={avatar}>
-                                                        {dept?.department_name?.charAt(0)}
-                                                    </div>
-                                                    <span style={{ fontWeight: 500 }}>
-                                                        {dept.department_name}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* HOD */}
-                                            <td style={tdCell}>{dept.hod_name || "-"}</td>
-
-                                            {/* ROLES */}
-                                            <td style={tdCell}>
-                                                {dept.roles?.length > 0 ? (
-                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                                        {dept.roles.slice(0, 3).map((r, idx) => (
-                                                            <span key={idx} style={badge}>
-                                                                {r.role_name}
-                                                            </span>
-                                                        ))}
-
-                                                        {dept.roles.length > 3 && (
-                                                            <span style={{ fontSize: 11, color: "#888" }}>
-                                                                +{dept.roles.length - 3} more
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span style={{ color: "#999" }}>No roles</span>
-                                                )}
-                                            </td>
-
-
-
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" style={emptyState}>
-                                            No departments found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    {openDeptModal && (
-                        <DepartmentModal
-                            onClose={() => setOpenDeptModal(false)}
-                            onSubmit={(payload) => {
-                                dispatch(createdeparment(payload))
-                            }}
-                        />
-                    )}
-                </>
-            )}
-        </div>
-    );
+      {openDeptModal && (
+        <DepartmentModal
+          onClose={() => setOpenDeptModal(false)}
+          onSubmit={async (payload) => {
+            try {
+              await dispatch(createdeparment(payload)).unwrap();
+              showSnackbar("success", "Department created successfully");
+              dispatch(deptRolesDetails());
+            } catch (err) {
+              showSnackbar("error", typeof err === "string" ? err : err?.message || "Failed to create department");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
 }

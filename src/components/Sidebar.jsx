@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
+import { LogOut } from "lucide-react"
 import { LogoutUser } from "../redux/services/authService";
 import { clearAuth } from "../redux/slices/authSlice";
 import { showSnackbar } from "../utils/snackbar";
@@ -34,7 +35,6 @@ const navItems = [
 export default function Sidebar({ active, setPage, numSprints, pctOk, sidebarOpen }) {
 
   const auth = useSelector((state) => state.auth?.auth)
-  console.log(auth)
   const dispatch = useDispatch();
 
   const handleLogout = () => {
@@ -86,7 +86,9 @@ export default function Sidebar({ active, setPage, numSprints, pctOk, sidebarOpe
               color: isActive ? '#0F52BA' : '#E3F2FD',
               background: isActive ? '#ffffff' : 'transparent',
               borderLeft: `4px solid ${isActive ? '#FFD700' : 'transparent'}`,
-              border: 'none',
+              borderTop: 'none',
+              borderRight: 'none',
+              borderBottom: 'none',
               width: '100%',
               textAlign: 'left',
               transition: 'all 0.2s ease',
@@ -104,7 +106,7 @@ export default function Sidebar({ active, setPage, numSprints, pctOk, sidebarOpe
               {item.icon}
             </span>
 
-            {sidebarOpen && <span color="#ffff">{item.label}</span>}
+            {sidebarOpen && <span style={{ color: 'inherit' }}>{item.label}</span>}
 
             {item.badge && sidebarOpen && (
               <span
@@ -157,7 +159,9 @@ export default function Sidebar({ active, setPage, numSprints, pctOk, sidebarOpe
             width: '100%',
             padding: '10px 16px',
             background: 'transparent',
-            border: 'none',
+            borderTop: 'none',
+            borderRight: 'none',
+            borderBottom: 'none',
             color: '#E3F2FD',
             fontSize: 13,
             cursor: 'pointer',
@@ -177,7 +181,9 @@ export default function Sidebar({ active, setPage, numSprints, pctOk, sidebarOpe
             e.currentTarget.style.borderLeft = '4px solid transparent';
           }}
         >
-          <span style={{ fontSize: 16 }}>⏻</span>
+          <span style={{ display: 'flex', width: 18, justifyContent: 'center' }}>
+            <LogOut size={14} />
+          </span>
           <span style={{ fontWeight: 500 }}>Logout</span>
         </button>
       </div>

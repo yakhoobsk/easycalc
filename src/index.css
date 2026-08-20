@@ -198,6 +198,58 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes ec-modal-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ec-modal-box-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ec-modal-overlay {
+  animation: ec-modal-overlay-in .18s ease;
+}
+
+.ec-modal-box {
+  animation: ec-modal-box-in .22s cubic-bezier(.22, 1, .36, 1);
+}
+
+.ec-modal-close {
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+
+.ec-modal-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  transform: rotate(90deg);
+}
+
+.ec-switch-track {
+  transition: background .2s ease, box-shadow .2s ease;
+}
+
+.ec-switch-thumb {
+  transition: left .2s cubic-bezier(.4, 0, .2, 1);
+}
+
+.ec-icon-btn {
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.ec-icon-btn:hover:not(:disabled) {
+  background: var(--blue-50);
+  color: var(--blue-700);
+  border-color: var(--blue-200);
+}
+
+.ec-icon-btn.danger:hover:not(:disabled) {
+  background: var(--red-100);
+  color: var(--red-700);
+  border-color: #F7C1C1;
+}
+
 /* Scrollable but with no visible scrollbar (scroll still works via wheel/touch/keys) */
 .ec-scroll {
   scrollbar-width: none;

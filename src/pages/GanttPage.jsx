@@ -1,7 +1,8 @@
-import { Card, CardTitle, PageHeader, Badge, Input } from '../components/UI.jsx'
+import { Card, CardTitle, PageHeader, Badge, Input, Switch, IconBtn } from '../components/UI.jsx'
 import { GANTT_PHASES, GANTT_COLORS } from '../constants.js'
 import { CreateGanttProject, granttGet, updateGanttProject } from '../redux/services/granttService.js'
 import { fmtDate } from '../useCalc.js'
+import { Settings2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -89,6 +90,44 @@ export default function GanttPage({ numSprintsl, sprints, projectId }) {
       console.log(err);
     }
   };
+  const handleSavePhase = async () => {
+    if (!newPhase.trim() || !sFrom || !sTo) return
+
+    if (!editingPhase) {
+      await handleAddPhase()
+      return
+    }
+
+    const payload = {
+      phase_name: newPhase,
+      sFrom: Number(sFrom),
+      sTo: Number(sTo),
+      color: "",
+      updated_by: "",
+      is_active: editingPhase.is_active,
+    }
+
+    try {
+      await dispatch(
+        updateGanttProject({
+          projectId,
+          grant_id: editingPhase.id,
+          payload,
+        })
+      ).unwrap()
+
+      dispatch(granttGet(projectId))
+
+      setPhaseDropdownOpen(false)
+      setEditingPhase(null)
+      setNewPhase('')
+      setSFrom('')
+      setSTo('')
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
   const handleTogglePhase =
     async (phase) => {
 
@@ -187,8 +226,9 @@ export default function GanttPage({ numSprintsl, sprints, projectId }) {
                 gap: 10,
               }}
             >
-              ⚙ Manage Phases
-              {phaseDropdownOpen ? "▲" : "▼"}
+              <Settings2 size={15} />
+              Manage phases
+              {phaseDropdownOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
             {phaseDropdownOpen && (
@@ -300,82 +340,27 @@ export default function GanttPage({ numSprintsl, sprints, projectId }) {
                         <div
                           style={{
                             display: "flex",
-                            gap: 8
+                            alignItems: "center",
+                            gap: 10
                           }}
                         >
 
-                          {/* Edit */}
-                          <button
+                          <IconBtn
+                            title="Edit phase"
                             onClick={() => {
                               setEditingPhase(p)
-
-                              setNewPhase(
-                                p.name
-                              );
-
-                              setSFrom(
-                                p.sFrom
-                              );
-
-                              setSTo(
-                                p.sTo
-                              );
-                            }}
-                            style={{
-                              border: "none",
-                              background: "none",
-                              cursor: "pointer"
+                              setNewPhase(p.name);
+                              setSFrom(p.sFrom);
+                              setSTo(p.sTo);
                             }}
                           >
-                            ✏️
-                          </button>
+                            <Pencil size={13} />
+                          </IconBtn>
 
-                          {/* Toggle */}
-                          <button
-                            onClick={() =>
-                              handleTogglePhase(p)
-                            }
-
-                            style={{
-                              width: 42,
-                              height: 22,
-
-                              border: "none",
-
-                              borderRadius:
-                                20,
-
-                              background:
-                                p.is_active
-                                  ? "#22C55E"
-                                  : "#D1D5DB",
-
-                              position:
-                                "relative",
-                            }}
-                          >
-
-                            <div
-                              style={{
-                                width: 18,
-                                height: 18,
-
-                                background: "#fff",
-
-                                borderRadius: "50%",
-
-                                position: "absolute",
-
-                                top: 2,
-
-                                left:
-                                  p.is_active
-                                    ? 22
-                                    : 2
-                              }}
-                            />
-
-                          </button>
+                          <Switch
+                            checked={!!p.is_active}
+                            onChange={() => handleTogglePhase(p)}
+                          />
 
                         </div>
 

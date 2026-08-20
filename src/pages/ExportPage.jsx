@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { FileSpreadsheet, Table, Image, FileText, FileType2, Presentation } from 'lucide-react'
 import { Card, CardTitle, PageHeader, Alert, Badge } from '../components/UI.jsx'
 import { useDispatch, useSelector } from 'react-redux'
 import { dashboardDetails } from '../redux/services/dashboardService.js'
@@ -98,7 +99,8 @@ export default function ExportPage({ brdState, projectId }) {
 
   const formats = [
     {
-      icon: '📗',
+      icon: FileSpreadsheet,
+      iconColor: '#1D9E75',
       label: 'Excel spreadsheet (.xlsx)',
       ext: '.xlsx',
       badge: 'green',
@@ -107,7 +109,8 @@ export default function ExportPage({ brdState, projectId }) {
       key: 'xlsx',
     },
     {
-      icon: '📑',
+      icon: Table,
+      iconColor: '#BA7517',
       label: 'CSV file (.csv)',
       ext: '.csv',
       badge: 'orange',
@@ -116,7 +119,8 @@ export default function ExportPage({ brdState, projectId }) {
       key: 'csv',
     },
     {
-      icon: '🖼️',
+      icon: Image,
+      iconColor: '#5F5E5A',
       label: 'PNG chart (.png)',
       ext: '.png',
       badge: 'gray',
@@ -125,7 +129,8 @@ export default function ExportPage({ brdState, projectId }) {
       key: 'png',
     },
     {
-      icon: '📄',
+      icon: FileText,
+      iconColor: '#0F52BA',
       label: 'Word document (.docx)',
       ext: '.docx',
       badge: 'blue',
@@ -134,7 +139,8 @@ export default function ExportPage({ brdState, projectId }) {
       key: 'docx',
     },
     {
-      icon: '📕',
+      icon: FileType2,
+      iconColor: '#A32D2D',
       label: 'PDF document (.pdf)',
       ext: '.pdf',
       badge: 'green',
@@ -143,7 +149,8 @@ export default function ExportPage({ brdState, projectId }) {
       key: 'pdf',
     },
     {
-      icon: '📊',
+      icon: Presentation,
+      iconColor: '#534AB7',
       label: 'PowerPoint deck (.pptx)',
       ext: '.pptx',
       badge: 'purple',
@@ -177,50 +184,74 @@ export default function ExportPage({ brdState, projectId }) {
         </Alert>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
-        {formats.map((f, i) => (
-          <Card
-            key={i}
-            style={{
-              textAlign: 'center',
-              padding: '28px 22px',
-              border: '1px solid var(--border)',
-              position: 'relative',
-              marginBottom: 0,
-            }}
-          >
-            <div style={{ fontSize: 36, marginBottom: 12 }}>{f.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy-800)', marginBottom: 8 }}>
-              {f.label}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
-              {f.desc}
-            </div>
-
-            <button
-              onClick={f.action}
-              disabled={!hasProjectData || loadingType !== null}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: window.innerWidth < 700 ? '1fr' : window.innerWidth < 1080 ? '1fr 1fr' : 'repeat(3, 1fr)',
+          gap: 16,
+          marginBottom: 20,
+        }}
+      >
+        {formats.map((f, i) => {
+          const Icon = f.icon
+          return (
+            <Card
+              key={i}
               style={{
-                width: '100%',
-                height: 38,
-                background: !hasProjectData || loadingType !== null ? 'var(--gray-300)' : 'var(--navy-800)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !hasProjectData || loadingType !== null ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
+                textAlign: 'center',
+                padding: '28px 22px',
+                border: '1px solid var(--border)',
+                position: 'relative',
+                marginBottom: 0,
               }}
             >
-              {loadingType === f.key ? 'Generating…' : `Download ${f.ext} ↓`}
-            </button>
-          </Card>
-        ))}
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: `${f.iconColor}18`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 14px',
+                }}
+              >
+                <Icon size={26} color={f.iconColor} strokeWidth={1.75} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy-800)', marginBottom: 8 }}>
+                {f.label}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
+                {f.desc}
+              </div>
+
+              <button
+                className="ec-btn"
+                onClick={f.action}
+                disabled={!hasProjectData || loadingType !== null}
+                style={{
+                  width: '100%',
+                  height: 38,
+                  background: !hasProjectData || loadingType !== null ? 'var(--gray-300)' : 'linear-gradient(135deg, #123E82, #0A2C5C)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: !hasProjectData || loadingType !== null ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                {loadingType === f.key ? 'Generating…' : `Download ${f.ext} ↓`}
+              </button>
+            </Card>
+          )
+        })}
       </div>
 
       <Card>

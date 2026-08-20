@@ -1,272 +1,173 @@
 import { useEffect, useState } from "react";
-import {
-    AllProfileDetails,
-    createUser,
-    updateUser
-} from "../redux/services/profileService";
 import { useDispatch, useSelector } from "react-redux";
+import { UserPlus, UserCog } from "lucide-react";
+import {
+  AllProfileDetails,
+  createUser,
+  updateUser,
+} from "../redux/services/profileService";
 import { deptRolesDetails } from "../redux/services/settingsService";
-
-
-const modalOverlay = {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(10,25,41,0.7)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000
-};
-
-const modalBox = {
-    background: "#fff",
-    borderRadius: 14,
-    width: 520,
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    boxShadow: "0 20px 50px rgba(0,0,0,0.2)"
-};
-
-const headerStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: "1px solid #eee",
-    paddingBottom: 10
-};
-
-const inputWrap = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4
-};
-
-const inputStyle = {
-    height: 36,
-    borderRadius: 6,
-    border: "1px solid #ddd",
-    padding: "0 10px",
-    fontSize: 13
-};
-
-const footer = {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 10
-};
-
-const btnPrimary = {
-    background: "#185FA5",
-    color: "#fff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: 6,
-    cursor: "pointer"
-};
-
-const btnCancel = {
-    background: "#f3f4f6",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: 6,
-    cursor: "pointer"
-};
-
+import { Modal, FormGroup, Input, Select, Btn } from "./UI.jsx";
+import { showSnackbar } from "../utils/snackbar";
 
 export default function UserModal({ onClose, editUser }) {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    const deptRolesData =
-        useSelector((state) => state.complexity?.deptRolesData || []);
+  const deptRolesData = useSelector((state) => state.complexity?.deptRolesData || []);
 
-    const [rolesList, setRolesList] = useState([]);
+  const [rolesList, setRolesList] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        dispatch(deptRolesDetails());
-    }, [dispatch]);
+  useEffect(() => {
+    dispatch(deptRolesDetails());
+  }, [dispatch]);
 
-    const [form, setForm] = useState({
-        name: editUser?.name || "",
-        email: editUser?.email || "",
-        password: "",
-        role_id: editUser?.role_id || "",
-        department_id: editUser?.department_id || "",
-        is_active: true
-    });
+  const [form, setForm] = useState({
+    name: editUser?.name || "",
+    email: editUser?.email || "",
+    password: "",
+    role_id: editUser?.role_id || "",
+    department_id: editUser?.department_id || "",
+    is_active: true,
+  });
 
-    const isEdit = !!editUser;
+  const isEdit = !!editUser;
 
-    const handleDeptChange = (deptId) => {
-        setForm({
-            ...form,
-            department_id: deptId,
-            role_id: ""
-        });
+  const handleDeptChange = (deptId) => {
+    setForm({ ...form, department_id: deptId, role_id: "" });
 
-        const selectedDept = deptRolesData.find(
-            (d) => d.department_id === deptId
-        );
+    const selectedDept = deptRolesData.find((d) => d.department_id === deptId);
+    setRolesList(selectedDept?.roles || []);
+  };
 
-        setRolesList(selectedDept?.roles || []);
-    };
+  useEffect(() => {
+    if (editUser && deptRolesData.length > 0) {
+      const selectedDept = deptRolesData.find((d) => d.department_id === editUser.department_id);
+      setRolesList(selectedDept?.roles || []);
+    }
+  }, [editUser, deptRolesData]);
 
-    useEffect(() => {
-        if (editUser && deptRolesData.length > 0) {
-            const selectedDept = deptRolesData.find(
-                (d) => d.department_id === editUser.department_id
-            );
+  const handleSubmit = async () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      showSnackbar("warning", "Name and email are required");
+      return;
+    }
 
-            setRolesList(selectedDept?.roles || []);
-        }
-    }, [editUser, deptRolesData]);
+    if (!isEdit && !form.password) {
+      showSnackbar("warning", "Password is required for new users");
+      return;
+    }
 
-    const handleSubmit = async () => {
-        if (!form.name || !form.email) {
-            alert("Name & Email required");
-            return;
-        }
+    try {
+      setSubmitting(true);
 
-        if (!isEdit && !form.password) {
-            alert("Password required");
-            return;
-        }
+      if (isEdit) {
+        await dispatch(
+          updateUser({
+            user_id: editUser?.user_id,
+            payload: { ...form, updated_by: form.email },
+          })
+        ).unwrap();
+        showSnackbar("success", "User updated successfully");
+      } else {
+        await dispatch(
+          createUser({ ...form, created_by: form.email, updated_by: "" })
+        ).unwrap();
+        showSnackbar("success", "User created successfully");
+      }
 
-        try {
-            if (isEdit) {
-                await dispatch(
-                    updateUser({
-                        user_id: editUser?.user_id,
-                        payload: {
-                            ...form,
-                            updated_by: form.email
-                        }
-                    })
-                ).unwrap();
-            } else {
-                await dispatch(
-                    createUser({
-                        ...form,
-                        created_by: form.email,
-                        updated_by: ""
-                    })
-                ).unwrap();
-            }
+      dispatch(AllProfileDetails());
+      onClose();
+    } catch (err) {
+      showSnackbar("error", typeof err === "string" ? err : err?.message || "Save failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-            dispatch(AllProfileDetails());
-            onClose();
-        } catch (err) {
-            console.error(err);
-        }
-    };
+  return (
+    <Modal
+      title={
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {isEdit ? <UserCog size={16} /> : <UserPlus size={16} />}
+          {isEdit ? "Update user" : "Add user"}
+        </span>
+      }
+      onClose={onClose}
+      width={520}
+      footer={
+        <>
+          <Btn variant="secondary" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Btn>
+          <Btn variant="navy" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Saving..." : isEdit ? "Update user" : "Create user"}
+          </Btn>
+        </>
+      }
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: window.innerWidth < 560 ? "1fr" : "1fr 1fr",
+          gap: 14,
+        }}
+      >
+        <FormGroup label="Name">
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Full name"
+            autoFocus
+          />
+        </FormGroup>
 
+        <FormGroup label="Email">
+          <Input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="name@company.com"
+          />
+        </FormGroup>
 
-    return (
-        <div style={modalOverlay} onClick={onClose}>
-            <div style={modalBox} onClick={(e) => e.stopPropagation()}>
-
-                {/* HEADER */}
-                <div style={headerStyle}>
-                    <h3>{isEdit ? "Update User" : "Add User"}</h3>
-                    <span onClick={onClose} style={{ cursor: "pointer" }}>✕</span>
-                </div>
-
-                {/* FORM */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-
-                    <Input
-                        label="Name"
-                        value={form.name}
-                        onChange={(v) => setForm({ ...form, name: v })}
-                    />
-
-                    <Input
-                        label="Email"
-                        value={form.email}
-                        onChange={(v) => setForm({ ...form, email: v })}
-                    />
-
-                    {!isEdit && (
-                        <Input
-                            label="Password"
-                            type="password"
-                            value={form.password}
-                            onChange={(v) => setForm({ ...form, password: v })}
-                        />
-                    )}
-
-                    <Select
-                        label="Department"
-                        value={form.department_id}
-                        onChange={handleDeptChange}
-                        options={deptRolesData.map((d) => ({
-                            label: d.department_name,
-                            value: d.department_id
-                        }))}
-                    />
-
-                    <Select
-                        label="Role"
-                        value={form.role_id}
-                        onChange={(v) =>
-                            setForm({ ...form, role_id: v })
-                        }
-                        options={rolesList.map((r) => ({
-                            label: r.role_name,
-                            value: r.role_id
-                        }))}
-                    />
-                </div>
-
-                {/* ACTIONS */}
-                <div style={footer}>
-                    <button onClick={onClose} style={btnCancel}>
-                        Cancel
-                    </button>
-
-                    <button onClick={handleSubmit} style={btnPrimary}>
-                        {isEdit ? "Update User" : "Create User"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-
-function Input({ label, value, onChange, type = "text" }) {
-    return (
-        <div style={inputWrap}>
-            <label>{label}</label>
-            <input
-                type={type}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                style={inputStyle}
+        {!isEdit && (
+          <FormGroup label="Password">
+            <Input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="••••••••"
             />
-        </div>
-    );
-}
+          </FormGroup>
+        )}
 
+        <FormGroup label="Department">
+          <Select value={form.department_id} onChange={(e) => handleDeptChange(e.target.value)}>
+            <option value="">Select department</option>
+            {deptRolesData.map((d) => (
+              <option key={d.department_id} value={d.department_id}>
+                {d.department_name}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
 
-function Select({ label, value, onChange, options }) {
-    return (
-        <div style={inputWrap}>
-            <label>{label}</label>
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                style={inputStyle}
-            >
-                <option value="">Select {label}</option>
-                {options.map((opt, i) => (
-                    <option key={i} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
-        </div>
-    );
+        <FormGroup label="Role">
+          <Select
+            value={form.role_id}
+            onChange={(e) => setForm({ ...form, role_id: e.target.value })}
+            disabled={!form.department_id}
+          >
+            <option value="">Select role</option>
+            {rolesList.map((r) => (
+              <option key={r.role_id} value={r.role_id}>
+                {r.role_name}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
+      </div>
+    </Modal>
+  );
 }

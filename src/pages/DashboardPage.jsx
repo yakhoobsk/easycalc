@@ -376,11 +376,11 @@ export default function DashboardPage({ numIntgs, numSprints, sprints, totalProj
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: 10
       }}>
-        {complexitycards.map(c => (
-          <Card key={c.id} style={{ textAlign: 'center', padding: '14px 12px', borderTop: `3px solid ${c.color}`, marginBottom: 0 }}>
+        {complexitycards.map((c, i) => (
+          <Card key={c.id ?? c.tier ?? i} style={{ textAlign: 'center', padding: '14px 12px', borderTop: `3px solid ${c.color}`, marginBottom: 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--navy-800)' }}>{c.count}</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: c.color, margin: '2px 0' }}>{c.tier}</div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{Math.round(c.hours).toLocaleString()} hrs</div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{Math.round(Number(c.hours) || 0).toLocaleString()} hrs</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{c.points} pts each</div>
           </Card>
         ))}

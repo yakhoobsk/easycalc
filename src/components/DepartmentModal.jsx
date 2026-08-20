@@ -1,156 +1,86 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
-
-const modalOverlay = {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(10,25,41,0.7)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000
-};
-
-const modalBox = {
-    background: "#fff",
-    borderRadius: 14,
-    width: 480,
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    boxShadow: "0 20px 50px rgba(0,0,0,0.2)"
-};
-
-const inputWrap = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4
-};
-
-const labelStyle = {
-    fontSize: 12,
-    color: "#666"
-};
-
-const inputStyle = {
-    height: 36,
-    borderRadius: 6,
-    border: "1px solid #ddd",
-    padding: "0 10px",
-    fontSize: 13
-};
-
-const footer = {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 10
-};
-
-const btnPrimary = {
-    background: "#185FA5",
-    color: "#fff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: 6,
-    cursor: "pointer"
-};
-
-const btnCancel = {
-    background: "#eee",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: 6,
-    cursor: "pointer"
-};
+import { Building2 } from "lucide-react";
+import { Modal, FormGroup, Input, Switch, Btn } from "./UI.jsx";
+import { showSnackbar } from "../utils/snackbar";
 
 export default function DepartmentModal({ onClose, onSubmit }) {
-    const auth = useSelector((state) => state.auth?.auth || {});
+  const auth = useSelector((state) => state.auth?.auth || {});
+  const [form, setForm] = useState({
+    name: "",
+    hod_name: "",
+    is_active: true,
+  });
+  const [submitting, setSubmitting] = useState(false);
 
-    const [form, setForm] = useState({
-        name: "",
-        hod_name: "",
-        created_by: "",
-        updated_by: "",
-        is_active: true
-    });
+  const handleSubmit = async () => {
+    if (!form.name.trim() || !form.hod_name.trim()) {
+      showSnackbar("warning", "Department name and HOD name are required");
+      return;
+    }
 
-    const handleSubmit = () => {
-        if (!form.name || !form.hod_name) {
-            console.error("Name & HOD required");
-            return;
-        }
-
-        const payload = {
-            name: form.name,
-            hod_name: form.hod_name,
-            created_by: auth?.name || "",
-            updated_by: auth?.name || "",
-            is_active: true
-        };
-
-
-        onSubmit?.(payload);
-        onClose();
+    const payload = {
+      name: form.name.trim(),
+      hod_name: form.hod_name.trim(),
+      created_by: auth?.name || "",
+      updated_by: auth?.name || "",
+      is_active: form.is_active,
     };
 
-    return (
-        <div style={modalOverlay} onClick={onClose}>
-            <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+    try {
+      setSubmitting(true);
+      await onSubmit?.(payload);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-                <h3 style={{ margin: 0 }}>Create Department</h3>
+  return (
+    <Modal
+      title={
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Building2 size={16} /> Create department
+        </span>
+      }
+      onClose={onClose}
+      width={440}
+      footer={
+        <>
+          <Btn variant="secondary" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Btn>
+          <Btn variant="navy" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Creating..." : "Create department"}
+          </Btn>
+        </>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <FormGroup label="Department name">
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="e.g. Integration"
+            autoFocus
+          />
+        </FormGroup>
 
-                <Input
-                    label="Department Name"
-                    value={form.name}
-                    onChange={(v) => setForm({ ...form, name: v })}
-                />
+        <FormGroup label="Head of department">
+          <Input
+            value={form.hod_name}
+            onChange={(e) => setForm({ ...form, hod_name: e.target.value })}
+            placeholder="e.g. Jane Doe"
+          />
+        </FormGroup>
 
-                <Input
-                    label="HOD Name"
-                    value={form.hod_name}
-                    onChange={(v) => setForm({ ...form, hod_name: v })}
-                />
-
-
-
-                {/* ACTIVE SWITCH */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <label style={{ fontSize: 12 }}>Active</label>
-                    <input
-                        type="checkbox"
-                        checked={form.is_active}
-                        onChange={(e) =>
-                            setForm({ ...form, is_active: e.target.checked })
-                        }
-                    />
-                </div>
-
-                <div style={footer}>
-                    <button onClick={onClose} style={btnCancel}>
-                        Cancel
-                    </button>
-
-                    <button onClick={handleSubmit} style={btnPrimary}>
-                        Create
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ---------- INPUT ---------- */
-
-function Input({ label, value, onChange }) {
-    return (
-        <div style={inputWrap}>
-            <label style={labelStyle}>{label}</label>
-            <input
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                style={inputStyle}
-            />
-        </div>
-    );
+        <Switch
+          checked={form.is_active}
+          onChange={(v) => setForm({ ...form, is_active: v })}
+          label="Active"
+          hint="Inactive departments are hidden from role assignment"
+        />
+      </div>
+    </Modal>
+  );
 }

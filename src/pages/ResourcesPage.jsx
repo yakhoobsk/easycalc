@@ -25,7 +25,7 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
-        <Metric value={Math.round(summaryData?.total_project_hours).toLocaleString()} label="Total hours" accent="#185FA5" delta={`Over ${summaryData?.total_weeks} weeks`} />
+        <Metric value={Math.round(Number(summaryData?.total_project_hours) || 0).toLocaleString()} label="Total hours" accent="#185FA5" delta={`Over ${summaryData?.total_weeks || 0} weeks`} />
         <Metric value={summaryData?.total_ftes} label="Total FTEs" accent="#0F6E56" />
         <Metric value={summaryData?.total_integrations} label="Integrations" accent="#534AB7" />
         <Metric value={summaryData?.total_weeks} label="Duration (weeks)" accent="#854F0B" />
@@ -73,10 +73,10 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
             <tr style={{ background: 'var(--navy-800)' }}>
               <td colSpan={6} style={{ padding: '9px 12px', color: '#fff', fontWeight: 700, fontSize: 12 }}>Total</td>
               <td style={{ padding: '9px 12px', textAlign: 'center', color: '#5DCAA5', fontWeight: 700, fontSize: 12 }}>
-                {Math.round(summaryData?.total_ftes * (summaryData?.total_weeks || 2) * 40)}
+                {Math.round((Number(summaryData?.total_ftes) || 0) * (Number(summaryData?.total_weeks) || 2) * 40).toLocaleString()}
               </td>
               <td style={{ padding: '9px 12px', textAlign: 'center', color: '#5DCAA5', fontWeight: 700, fontSize: 12 }}>
-                {Math.round(summaryData?.total_project_hours).toLocaleString()}
+                {Math.round(Number(summaryData?.total_project_hours) || 0).toLocaleString()}
               </td>
               <td style={{ padding: '9px 12px', color: '#fff', fontWeight: 700, fontSize: 12 }}>100%</td>
             </tr>
@@ -106,10 +106,10 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
                     {c.tier}
                   </span>
                 </Td>
-                <Td center bold>{c.percentage?.toFixed(1)}%</Td>
-                <Td center bold>{c.count}</Td>
-                <Td center>{c.effort_points}</Td>
-                <Td center bold>{Math.round(c.total_effort_hours).toLocaleString()}</Td>
+                <Td center bold>{(Number(c.percentage) || 0).toFixed(1)}%</Td>
+                <Td center bold>{c.count ?? 0}</Td>
+                <Td center>{c.effort_points ?? '—'}</Td>
+                <Td center bold>{Math.round(Number(c.total_effort_hours) || 0).toLocaleString()}</Td>
                 <Td>
                   <Badge variant={c.tier === 'Complex' || c.tier === 'Very Complex' ? 'purple' : c.tier === 'Medium' ? 'blue' : 'gray'}>
                     {c.tier === 'Complex' || c.tier === 'Very Complex' ? 'Sr developer' : c.tier === 'Medium' ? 'Sr + Developer' : 'Developer / Assoc.'}
@@ -123,11 +123,11 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
               <td style={{ padding: '8px 12px', fontWeight: 700, fontSize: 12, color: 'var(--navy-800)' }}>Total</td>
               <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 12, color: 'var(--navy-800)' }}>100%</td>
               <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 12, color: 'var(--navy-800)' }}>
-                {complexityDist.reduce((a, c) => a + c.count, 0)}
+                {complexityDist.reduce((a, c) => a + (Number(c.count) || 0), 0)}
               </td>
               <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: 12, color: 'var(--gray-500)' }}>—</td>
               <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 12, color: 'var(--navy-800)' }}>
-                {Math.round(complexityDist.reduce((a, c) => a + c.total_effort_hours, 0)).toLocaleString()}
+                {Math.round(complexityDist.reduce((a, c) => a + (Number(c.total_effort_hours) || 0), 0)).toLocaleString()}
               </td>
               <td />
             </tr>
