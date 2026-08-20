@@ -10,7 +10,8 @@ import {
   CalendarOutlined,
   DashboardOutlined,
   BarChartOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  ApartmentOutlined
 } from '@ant-design/icons';
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { id: 'input', label: 'Project input', icon: <FileTextOutlined /> },
   { id: 'resources', label: 'Resources', icon: <TeamOutlined /> },
   { id: 'sprints', label: 'Sprint plan', icon: <CalendarOutlined />, badge: true },
+  { id: 'integrations', label: 'Integrations', icon: <ApartmentOutlined /> },
 
   { section: 'Outputs' },
   { id: 'dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },

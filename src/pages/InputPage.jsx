@@ -1,6 +1,6 @@
 import { Card, CardTitle, PageHeader, Alert, Btn, FormGroup, Input, Select } from '../components/UI.jsx'
 import { DEPT_COLORS } from '../constants.js'
-import { projectCalc, updateProject, updateProjectRoles } from '../redux/services/inputService.js'
+import { createProject, projectCalc, updateProject, updateProjectRoles } from '../redux/services/inputService.js'
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -88,10 +88,12 @@ export default function InputPage({
   setRoles,
   setPage,
   pctTotal,
+  boomiAiEnabled,
+  setBoomiAiEnabled,
 }) {
   const dispatch = useDispatch()
 
-  const calcLoading = useSelector((state) => state.projectCalc?.loading);
+  const calcLoading = useSelector((state) => state.input?.loading);
   const [savingDraft, setSavingDraft] = useState(false)
   const [calculating, setCalculating] = useState(false)
 
@@ -173,6 +175,7 @@ export default function InputPage({
     sprint_count: Number(numSprints),
     sprint_duration_weeks: Number(sprintWeeks),
     start_date: startDate,
+    boomi_ai_enabled: !!boomiAiEnabled,
     updated_by: "praveen.bhima@easystepin.com",
   })
 
@@ -357,6 +360,31 @@ export default function InputPage({
               <option value={3}>3 weeks</option>
               <option value={4}>4 weeks</option>
             </Select>
+          </FormGroup>
+
+          <FormGroup
+            label="Use Boomi AI"
+            hint="Cuts Dev & UT effort by 30% (standard connectors only)"
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                height: 34,
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!!boomiAiEnabled}
+                onChange={(e) => setBoomiAiEnabled(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: 'var(--teal-600)', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--navy-800)' }}>
+                {boomiAiEnabled ? 'Enabled — 30% off Dev & UT' : 'Disabled'}
+              </span>
+            </label>
           </FormGroup>
         </div>
       </Card>

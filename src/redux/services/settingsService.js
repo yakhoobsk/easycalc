@@ -129,6 +129,45 @@ export const updateRoleMaster = createAsyncThunk(
   }
 );
 
+export const tierPhaseEffortDetails = createAsyncThunk(
+  "tierPhaseEffort/get",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await calcFlask.get(`/settings/tier_phase_effort`);
+      return response?.data?.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Fetch failed"
+      );
+    }
+  }
+);
+
+export const upsertTierPhaseEffort = createAsyncThunk(
+  "tierPhaseEffort/upsert",
+  async ({ tierId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await calcFlask.post(
+        `/settings/tier_phase_effort/${tierId}`,
+        payload
+      );
+
+      const data = response?.data;
+
+      showSnackbar("success", data?.message || "Effort hours saved successfully");
+
+      return data?.data;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Effort hours save failed";
+
+      showSnackbar("error", message);
+
+      return rejectWithValue(message);
+    }
+  }
+);
+
 export const deleteRoleMaster = createAsyncThunk(
   "role/delete",
   async (roleId, { rejectWithValue }) => {
