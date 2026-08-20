@@ -15,6 +15,17 @@ const DEPT_COLORS_MAP = {
   Analytics: '#D85A30',
 }
 
+const PHASE_LABELS = {
+  requirements_gathering: 'Req. gathering',
+  documentation: 'Documentation',
+  analysis_design: 'Analysis & Design',
+  dev_ut: 'Dev & UT',
+  sit: 'SIT',
+  uat: 'UAT',
+  cutover_golive: 'Cutover & Go-live',
+  hypercare: 'HyperCare',
+}
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
 
@@ -132,7 +143,12 @@ export default function DashboardPage({ numIntgs, numSprints, sprints, totalProj
   const complexitycards = dashboardData?.complexity_cards || [];
   const rolehoursbreakdown = dashboardData?.role_hours_breakdown || [];
   const sprintChartData = dashboardData?.effort_hours_per_sprint || [];
-  console.log(sprintChartData)
+  const phaseEffortBreakdown = dashboardData?.phase_effort_breakdown || [];
+  const phaseEffortChartData = phaseEffortBreakdown.map((p) => ({
+    name: PHASE_LABELS[p.phase_name] || p.phase_name,
+    total_hours: Math.round(Number(p.total_hours || 0)),
+    boomi_ai_hours: Math.round(Number(p.boomi_ai_hours || 0)),
+  }))
   const pieData = complexitydistdata.map(c => ({ name: c.tier, value: c.count, color: c.color, percentage: c.percentage }))
   const roleChartData = [...rolehoursbreakdown]
     .sort((a, b) => b.hours - a.hours)
@@ -279,6 +295,33 @@ export default function DashboardPage({ numIntgs, numSprints, sprints, totalProj
           </BarChart>
         </ResponsiveContainer>
       </Card>
+
+      {/* Phase effort breakdown */}
+      {phaseEffortChartData.length > 0 && (
+        <Card>
+          <CardTitle>Effort hours by phase</CardTitle>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+            {[
+              ['#185FA5', 'Total hours'],
+              ['#2FBFA0', 'With Boomi AI'],
+            ].map(([c, l]) => (
+              <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} />{l}
+              </span>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={phaseEffortChartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }} barCategoryGap="24%" barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ECEAE4" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#888780' }} axisLine={false} tickLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
+              <YAxis tick={{ fontSize: 10, fill: '#888780' }} axisLine={false} tickLine={false} width={44} />
+              <Tooltip />
+              <Bar dataKey="total_hours" name="Total hours" fill="#185FA5" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="boomi_ai_hours" name="With Boomi AI" fill="#2FBFA0" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       {/* Role hours horizontal bar */}
       <Card>

@@ -11,6 +11,7 @@ import settingsSlice from './slices/settingSlice'
 import inputSlice from './slices/inputSlice'
 import resourceSlice from './slices/resourceSlice'
 import profileSlice from './slices/profileSlice'
+import integrationSlice from './slices/integrationSlice'
 const authPersistConfig = {
   key: "auth",
   storage,
@@ -27,7 +28,8 @@ export const store = configureStore({
     complexity: settingsSlice,
     input: inputSlice,
     resource: resourceSlice,
-    profile: profileSlice
+    profile: profileSlice,
+    integration: integrationSlice
   },
 
   middleware: (getDefaultMiddleware) =>

@@ -6,6 +6,8 @@ import {
   updateRoleMaster,
   deleteRoleMaster,
   updatecomplexityTiers,
+  tierPhaseEffortDetails,
+  upsertTierPhaseEffort,
 } from "../services/settingsService";
 
 const initialState = {
@@ -18,6 +20,7 @@ const initialState = {
   roleCreate: null,
   updateRole: null,
   deleteRole: null,
+  tierPhaseEffortData: [],
 };
 
 const settingsSlice = createSlice({
@@ -136,6 +139,39 @@ const settingsSlice = createSlice({
       })
       .addCase(deleteRoleMaster.rejected, (state, action) => {
         state.isLoading = false;
+        state.error = action.payload || action.error?.message || "Something went wrong";
+      })
+
+      .addCase(tierPhaseEffortDetails.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(tierPhaseEffortDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tierPhaseEffortData = action.payload || [];
+      })
+      .addCase(tierPhaseEffortDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message || "Something went wrong";
+      })
+
+      .addCase(upsertTierPhaseEffort.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(upsertTierPhaseEffort.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const savedRows = action.payload || [];
+        const savedIds = new Set(savedRows.map((row) => row.id));
+
+        state.tierPhaseEffortData = [
+          ...(state.tierPhaseEffortData || []).filter((row) => !savedIds.has(row.id)),
+          ...savedRows,
+        ];
+      })
+      .addCase(upsertTierPhaseEffort.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload || action.error?.message || "Something went wrong";
       });
   },

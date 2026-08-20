@@ -8,13 +8,26 @@ import {
   updateRoleMaster,
   createRoleMaster,
   deleteRoleMaster,
+  tierPhaseEffortDetails,
+  upsertTierPhaseEffort,
 } from '../redux/services/settingsService.js'
 import { useDispatch, useSelector } from 'react-redux'
 import { showSnackbar } from '../utils/snackbar'
 
+const PHASE_COLUMNS = [
+  { key: 'requirements_gathering', label: 'Req. gathering' },
+  { key: 'documentation', label: 'Documentation' },
+  { key: 'analysis_design', label: 'Analysis & Design' },
+  { key: 'dev_ut', label: 'Dev & UT' },
+  { key: 'sit', label: 'SIT' },
+  { key: 'uat', label: 'UAT' },
+  { key: 'cutover_golive', label: 'Cutover & Go-live' },
+]
+
 export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
   const dispatch = useDispatch()
   const deptRolesData = useSelector((state) => state.complexity?.deptRolesData || [])
+  const tierPhaseEffortData = useSelector((state) => state.complexity?.tierPhaseEffortData || [])
   const loading = useSelector((state) => state.complexity?.loading)
   const [newDeptId, setNewDeptId] = useState('')
   const [newRole, setNewRole] = useState('')
@@ -22,11 +35,53 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
   const [deletingRoleId, setDeletingRoleId] = useState('')
   const [roleEdits, setRoleEdits] = useState({});
   const [savingComplexityId, setSavingComplexityId] = useState('')
+  const [phaseEdits, setPhaseEdits] = useState({})
+  const [savingPhaseCell, setSavingPhaseCell] = useState('')
 
 
   useEffect(() => {
     dispatch(deptRolesDetails())
+    dispatch(tierPhaseEffortDetails())
   }, [dispatch])
+
+  const phaseHoursByTier = useMemo(() => {
+    const map = {}
+    for (const row of tierPhaseEffortData) {
+      if (!map[row.tier_id]) map[row.tier_id] = {}
+      map[row.tier_id][row.phase_name] = row.hours
+    }
+    return map
+  }, [tierPhaseEffortData])
+
+  const handlePhaseCellChange = (tierId, phase, value) => {
+    setPhaseEdits((prev) => ({
+      ...prev,
+      [tierId]: { ...prev[tierId], [phase]: value },
+    }))
+  }
+
+  const handlePhaseCellSave = async (tierId, phase) => {
+    const edited = phaseEdits[tierId]?.[phase]
+    if (edited === undefined || edited === '') return
+
+    const cellKey = `${tierId}_${phase}`
+    try {
+      setSavingPhaseCell(cellKey)
+      await dispatch(
+        upsertTierPhaseEffort({
+          tierId,
+          payload: {
+            phase_hours: { [phase]: Number(edited) },
+            updated_by: 'praveen.bhima@easystepin.com',
+          },
+        })
+      ).unwrap()
+    } catch (err) {
+      console.error('Failed to update tier phase effort', err)
+    } finally {
+      setSavingPhaseCell('')
+    }
+  }
 
   const allRoles = useMemo(() => {
     return (deptRolesData || []).flatMap((dept) =>
@@ -808,6 +863,92 @@ export default function SettingsPage({ complexity, setComplexity, pctTotal }) {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <CardTitle>Effort hours by phase</CardTitle>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+          Hours per SDLC phase for each complexity tier. Drives project effort calculations
+          instead of a flat effort-points figure.
+        </p>
+
+        <div className="ec-scroll" style={{ overflowX: 'auto' }}>
+          <TableWrap style={{ marginBottom: 0, minWidth: 760 }}>
+            <thead>
+              <tr>
+                <Th>Tier</Th>
+                {PHASE_COLUMNS.map((p) => (
+                  <Th key={p.key} center>{p.label}</Th>
+                ))}
+                <Th center>Total</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {complexity.map((c) => {
+                const tierId = c.complexity_tier_id
+                const rowHours = phaseHoursByTier[tierId] || {}
+                const total = PHASE_COLUMNS.reduce(
+                  (sum, p) => sum + Number(rowHours[p.key] ?? 0),
+                  0
+                )
+
+                return (
+                  <tr key={tierId} className="ec-row-hover">
+                    <Td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{c.tier_name}</span>
+                      </div>
+                    </Td>
+
+                    {PHASE_COLUMNS.map((p) => {
+                      const cellKey = `${tierId}_${p.key}`
+                      const value = phaseEdits[tierId]?.[p.key] ?? rowHours[p.key] ?? ''
+
+                      return (
+                        <Td key={p.key} center>
+                          <input
+                            className="ec-input"
+                            type="number"
+                            value={value}
+                            min="0"
+                            style={{
+                              width: 56,
+                              height: 30,
+                              border: '1px solid var(--border)',
+                              borderRadius: 8,
+                              padding: '0 4px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              textAlign: 'center',
+                              fontFamily: 'inherit',
+                              color: 'var(--navy-800)',
+                              background: '#fff',
+                            }}
+                            disabled={savingPhaseCell === cellKey}
+                            onChange={(e) => handlePhaseCellChange(tierId, p.key, e.target.value)}
+                            onBlur={() => handlePhaseCellSave(tierId, p.key)}
+                          />
+                        </Td>
+                      )
+                    })}
+
+                    <Td center>
+                      <span style={{ fontWeight: 700, color: 'var(--teal-600)' }}>{total}</span>
+                    </Td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </TableWrap>
+        </div>
+
+        <Sep />
+
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 0 }}>
+          Effort hours per tier = sum of its 7 phase hours × integration count. A fixed 80hr HyperCare
+          line is added on top for every project.
+        </p>
+      </Card>
     </div>
   )
 }

@@ -11,6 +11,7 @@ import SprintsPage from './pages/SprintsPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import GanttPage from './pages/GanttPage.jsx'
 import ExportPage from './pages/ExportPage.jsx'
+import IntegrationsPage from './pages/IntegrationsPage.jsx'
 import LoginPage from './pages/index.jsx'
 import WelcomeScreen from './components/WelcomeScreen.jsx'
 import BrandedLoader from './components/BrandedLoader.jsx'
@@ -51,6 +52,7 @@ export default function App() {
   const [sprintWeeks, setSprintWeeks] = useState(projectData?.sprint_duration_weeks ?? 2)
   const [startDate, setStartDate] = useState(projectData?.start_date || '')
   const [client, setClient] = useState(projectData?.client_name || '')
+  const [boomiAiEnabled, setBoomiAiEnabled] = useState(!!projectData?.boomi_ai_enabled)
   const totalProtHrs = projectsData?.total_project_hours || 0
 
   // Detect a fresh login (auth going from absent to present within this session)
@@ -101,6 +103,7 @@ export default function App() {
       setStartDate(projectData?.start_date || '')
       setProjectName(projectsData?.project_name || '')
       setClient(projectData?.client_name || '')
+      setBoomiAiEnabled(!!projectData?.boomi_ai_enabled)
     }
   }, [projectData, projectsData])
 
@@ -140,6 +143,7 @@ export default function App() {
     projectName, setProjectName,
     projectId,
     client, setClient,
+    boomiAiEnabled, setBoomiAiEnabled,
     pctTotal,
     setPage,
     ...calc,
@@ -160,6 +164,7 @@ export default function App() {
     input: <InputPage {...shared} />,
     resources: <ResourcesPage {...shared} />,
     sprints: <SprintsPage {...shared} />,
+    integrations: <IntegrationsPage {...shared} />,
     dashboard: <DashboardPage {...shared} />,
     gantt: <GanttPage {...shared} />,
     export: <ExportPage {...shared} />,
