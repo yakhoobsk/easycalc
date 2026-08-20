@@ -193,6 +193,11 @@ body {
   outline: none;
 }
 
+@keyframes ec-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Scrollable but with no visible scrollbar (scroll still works via wheel/touch/keys) */
 .ec-scroll {
   scrollbar-width: none;
