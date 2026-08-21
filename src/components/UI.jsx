@@ -1,3 +1,5 @@
+import { Search } from 'lucide-react'
+
 // ── Card ─────────────────────────────────────────────────────────────────────
 export function Card({ children, style = {} }) {
   return (
@@ -138,6 +140,28 @@ export function Input({ style = {}, ...props }) {
 
 export function Select({ style = {}, children, ...props }) {
   return <select className="ec-input" style={{ height: 36, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0 10px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-surface)', fontFamily: 'inherit', cursor: 'pointer', ...style }} {...props}>{children}</select>
+}
+
+// ── Search input ──────────────────────────────────────────────────────────────
+// Meant to sit above a scrollable TableWrap, outside its scroll container, so it
+// stays put ("static") while the rows underneath scroll.
+export function SearchInput({ value, onChange, placeholder = 'Search...', style = {} }) {
+  return (
+    <div style={{ position: 'relative', marginBottom: 12, ...style }}>
+      <Search size={14} color="var(--gray-500)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+      <input
+        className="ec-input"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        placeholder={placeholder}
+        style={{
+          width: '100%', height: 36, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+          padding: '0 12px 0 34px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-surface)',
+          fontFamily: 'inherit',
+        }}
+      />
+    </div>
+  )
 }
 
 // ── Prog bar ──────────────────────────────────────────────────────────────────
@@ -374,9 +398,22 @@ export function EmptyState({ icon, title, description, action }) {
 }
 
 // ── Table shell ───────────────────────────────────────────────────────────────
-export function TableWrap({ children, style = {} }) {
+// Pass `maxHeight` to cap the table's height so it scrolls internally instead of
+// growing the page — the header row stays put (sticky) and the scrollbar is
+// visible (styled via `ec-table-scroll`), so it's obvious there's more to scroll.
+export function TableWrap({ children, style = {}, maxHeight }) {
   return (
-    <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 12, ...style }}>
+    <div
+      className={maxHeight ? 'ec-table-scroll' : undefined}
+      style={{
+        overflowX: 'auto',
+        overflowY: maxHeight ? 'auto' : undefined,
+        maxHeight,
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        ...style,
+      }}
+    >
       <table className="ec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>{children}</table>
     </div>
   )
@@ -386,7 +423,8 @@ export const Th = ({ children, center }) => (
   <th style={{
     background: 'linear-gradient(180deg, #F8FAFC, #F0F4F8)', fontSize: 10.5, fontWeight: 700, color: 'var(--gray-600)',
     letterSpacing: '.06em', textTransform: 'uppercase', padding: '11px 14px',
-    textAlign: center ? 'center' : 'left', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap'
+    textAlign: center ? 'center' : 'left', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap',
+    position: 'sticky', top: 0, zIndex: 2,
   }}>
     {children}
   </th>

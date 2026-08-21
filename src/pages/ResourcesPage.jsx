@@ -33,7 +33,7 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
 
       <Card>
         <CardTitle>Role allocation table</CardTitle>
-        <TableWrap>
+        <TableWrap maxHeight={420}>
           <thead>
             <tr>
               <Th>Department</Th>
@@ -86,7 +86,7 @@ export default function ResourcesPage({ numIntgs, numSprints, sprintWeeks, resou
 
       <Card>
         <CardTitle>Complexity distribution</CardTitle>
-        <TableWrap>
+        <TableWrap maxHeight={420}>
           <thead>
             <tr>
               <Th>Tier</Th>

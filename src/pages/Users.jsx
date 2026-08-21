@@ -17,6 +17,7 @@ import {
   Th,
   Td,
   EmptyState,
+  SearchInput,
 } from "../components/UI.jsx";
 
 const avatarStyle = {
@@ -88,11 +89,26 @@ export default function UsersPage() {
   const [openDeptModal, setOpenDeptModal] = useState(false);
   const [deletingId, setDeletingId] = useState("");
   const [tab, setTab] = useState("users");
+  const [userSearch, setUserSearch] = useState("");
+  const [deptSearch, setDeptSearch] = useState("");
 
   const dispatch = useDispatch();
   const deptRolesData = useSelector((state) => state.complexity?.deptRolesData || []);
   const users = useSelector((state) => state.profile?.allprofile || []);
   const usersLoading = useSelector((state) => state.profile?.loading);
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [u.name, u.email, u.role_name, u.department_name]
+      .some((v) => v?.toLowerCase().includes(q));
+  });
+
+  const filteredDepts = deptRolesData.filter((d) => {
+    const q = deptSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [d.department_name, d.hod_name].some((v) => v?.toLowerCase().includes(q));
+  });
 
   useEffect(() => {
     dispatch(AllProfileDetails());
@@ -175,7 +191,16 @@ export default function UsersPage() {
               }
             />
           ) : (
-            <TableWrap style={{ marginBottom: 0 }}>
+            <>
+              <SearchInput
+                value={userSearch}
+                onChange={setUserSearch}
+                placeholder="Search by name, email, role, or department..."
+              />
+              {filteredUsers.length === 0 ? (
+                <EmptyState title="No matching users" description={`No user matches "${userSearch}".`} />
+              ) : (
+              <TableWrap style={{ marginBottom: 0 }} maxHeight={420}>
               <thead>
                 <tr>
                   <Th>User</Th>
@@ -186,7 +211,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u, i) => (
+                {filteredUsers.map((u, i) => (
                   <tr key={u.user_id ?? i} className="ec-row-hover" style={{ background: i % 2 === 0 ? "#fff" : "var(--gray-50)" }}>
                     <Td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -221,7 +246,9 @@ export default function UsersPage() {
                   </tr>
                 ))}
               </tbody>
-            </TableWrap>
+              </TableWrap>
+              )}
+            </>
           )}
         </Card>
       )}
@@ -269,7 +296,16 @@ export default function UsersPage() {
               }
             />
           ) : (
-            <TableWrap style={{ marginBottom: 0 }}>
+            <>
+              <SearchInput
+                value={deptSearch}
+                onChange={setDeptSearch}
+                placeholder="Search by department or HOD..."
+              />
+              {filteredDepts.length === 0 ? (
+                <EmptyState title="No matching departments" description={`No department matches "${deptSearch}".`} />
+              ) : (
+              <TableWrap style={{ marginBottom: 0 }} maxHeight={420}>
               <thead>
                 <tr>
                   <Th>Department</Th>
@@ -278,7 +314,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {deptRolesData.map((dept, i) => (
+                {filteredDepts.map((dept, i) => (
                   <tr key={dept.department_id ?? i} className="ec-row-hover" style={{ background: i % 2 === 0 ? "#fff" : "var(--gray-50)" }}>
                     <Td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -306,7 +342,9 @@ export default function UsersPage() {
                   </tr>
                 ))}
               </tbody>
-            </TableWrap>
+              </TableWrap>
+              )}
+            </>
           )}
         </Card>
       )}

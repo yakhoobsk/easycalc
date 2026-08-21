@@ -48,7 +48,7 @@ export default function SprintsPage({ numIntgs, numSprints, sprintWeeks, sprints
             })}
           </div>
         </div>
-        <TableWrap style={{ border: 'none', borderRadius: 0 }}>
+        <TableWrap style={{ border: 'none', borderRadius: 0 }} maxHeight={480}>
           <thead>
             <tr>
               <Th>#</Th>

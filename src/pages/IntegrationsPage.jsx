@@ -1,4 +1,4 @@
-import { Card, CardTitle, PageHeader, Alert, Btn, FormGroup, Input, Select, Badge, TableWrap, Th, Td } from '../components/UI.jsx'
+import { Card, CardTitle, PageHeader, Alert, Btn, FormGroup, Input, Select, Badge, TableWrap, Th, Td, SearchInput, EmptyState } from '../components/UI.jsx'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -30,6 +30,7 @@ export default function IntegrationsPage({ projectId, complexity }) {
   const [selections, setSelections] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const [assessmentSearch, setAssessmentSearch] = useState('')
 
   useEffect(() => {
     dispatch(getComplexityFactors())
@@ -115,6 +116,12 @@ export default function IntegrationsPage({ projectId, complexity }) {
   }
 
   const answeredCount = (assessment) => (assessment.selections || []).length
+
+  const filteredAssessments = assessments.filter((a) => {
+    const q = assessmentSearch.trim().toLowerCase()
+    if (!q) return true
+    return [a.integration_name, a.final_complexity].some((v) => v?.toLowerCase().includes(q))
+  })
 
   if (!projectId) {
     return (
@@ -226,7 +233,16 @@ export default function IntegrationsPage({ projectId, complexity }) {
             No integrations assessed yet — the project still uses the percentage split from Settings.
           </p>
         ) : (
-          <TableWrap style={{ marginBottom: 0 }}>
+          <>
+            <SearchInput
+              value={assessmentSearch}
+              onChange={setAssessmentSearch}
+              placeholder="Search by integration name or complexity..."
+            />
+            {filteredAssessments.length === 0 ? (
+              <EmptyState title="No matching integrations" description={`No integration matches "${assessmentSearch}".`} />
+            ) : (
+          <TableWrap style={{ marginBottom: 0 }} maxHeight={420}>
             <thead>
               <tr>
                 <Th>Integration</Th>
@@ -236,7 +252,7 @@ export default function IntegrationsPage({ projectId, complexity }) {
               </tr>
             </thead>
             <tbody>
-              {assessments.map((a) => (
+              {filteredAssessments.map((a) => (
                 <tr key={a.id} className="ec-row-hover">
                   <Td>{a.integration_name}</Td>
                   <Td center>
@@ -274,6 +290,8 @@ export default function IntegrationsPage({ projectId, complexity }) {
               ))}
             </tbody>
           </TableWrap>
+            )}
+          </>
         )}
       </Card>
     </div>
