@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import Sidebar from './components/Sidebar.jsx'
@@ -30,8 +30,12 @@ export default function App() {
 
   const [page, setPage] = useState('settings')
 
-  const [showWelcome, setShowWelcome] = useState(false)
-  const wasAuthedRef = useRef(false)
+  // Read the "just logged in" flag once at mount, synchronously, instead of
+  // inferring it from an auth-state transition — that transition depends on
+  // async redux-persist rehydration, so waiting for it created a race where
+  // the flag could be consumed without its hide-timer ever firing, leaving
+  // the welcome screen stuck on screen.
+  const [showWelcome, setShowWelcome] = useState(() => sessionStorage.getItem('justLoggedIn') === '1')
 
   const projectData = useSelector((state) => state.input?.inputData || {})
   const projectsData = useSelector((state) =>
@@ -55,22 +59,15 @@ export default function App() {
   const [boomiAiEnabled, setBoomiAiEnabled] = useState(!!projectData?.boomi_ai_enabled)
   const totalProtHrs = projectsData?.total_project_hours || 0
 
-  // Detect a fresh login (auth going from absent to present within this session)
-  // rather than an already-authenticated page load, so the welcome screen only
-  // shows right after signing in, not on every refresh.
+  // Consume the "just logged in" flag exactly once, then auto-hide the
+  // welcome screen after a beat.
   useEffect(() => {
-    const isAuthed = !!auth
+    if (!showWelcome) return
 
-    if (!wasAuthedRef.current && isAuthed && sessionStorage.getItem('justLoggedIn') === '1') {
-      sessionStorage.removeItem('justLoggedIn')
-      setShowWelcome(true)
-      wasAuthedRef.current = isAuthed
-      const timer = setTimeout(() => setShowWelcome(false), 1800)
-      return () => clearTimeout(timer)
-    }
-
-    wasAuthedRef.current = isAuthed
-  }, [auth])
+    sessionStorage.removeItem('justLoggedIn')
+    const timer = setTimeout(() => setShowWelcome(false), 1800)
+    return () => clearTimeout(timer)
+  }, [showWelcome])
 
   useEffect(() => {
     if (!auth) return
