@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import logo from "../assests/logocomany2.png";
+import logo from "../assests/logocomany12.png";
 import pkg from '../../package.json';
 export default function Topbar({ projectName, sidebarOpen, setSidebarOpen, setPage, }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)

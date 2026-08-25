@@ -1,4 +1,4 @@
-import logo from "../assests/logocomany2.png";
+import logo from "../assests/logocomany12.png";
 
 export default function BrandedLoader({ label = "Loading..." }) {
   return (
